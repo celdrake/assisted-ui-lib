@@ -1,3 +1,16 @@
+/**
+ * The virtual IP used to reach the OpenShift cluster's API.
+ */
+export interface ApiVip {
+  /**
+   * The cluster that this VIP is associated with.
+   */
+  clusterId?: string; // uuid
+  /**
+   * The IP address.
+   */
+  ip?: Ip; // ^(?:(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$
+}
 export interface ApiVipConnectivityRequest {
   /**
    * URL address of the API.
@@ -109,6 +122,10 @@ export interface Cluster {
    */
   apiVip?: string; // ^(?:(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$
   /**
+   * The virtual IPs used to reach the OpenShift cluster's API. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.
+   */
+  apiVips?: ApiVip[];
+  /**
    * The domain name used to reach the OpenShift cluster API.
    */
   apiVipDnsName?: string;
@@ -120,6 +137,10 @@ export interface Cluster {
    * The virtual IP used for cluster ingress traffic.
    */
   ingressVip?: string; // ^(?:(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$
+  /**
+   * The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.
+   */
+  ingressVips?: IngressVip[];
   /**
    * SSH public key for debugging OpenShift nodes.
    */
@@ -353,9 +374,17 @@ export interface ClusterCreateParams {
    */
   apiVip?: string; // ^(?:(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$
   /**
+   * The virtual IPs used to reach the OpenShift cluster's API. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.
+   */
+  apiVips?: ApiVip[];
+  /**
    * The virtual IP used for cluster ingress traffic.
    */
   ingressVip?: string; // ^(?:(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$
+  /**
+   * The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.
+   */
+  ingressVips?: IngressVip[];
   /**
    * The pull secret obtained from Red Hat OpenShift Cluster Manager at console.redhat.com/openshift/install/pull-secret.
    */
@@ -1640,6 +1669,19 @@ export interface InfraError {
   message: string;
 }
 export type IngressCertParams = string;
+/**
+ * The virtual IP used for cluster ingress traffic.
+ */
+export interface IngressVip {
+  /**
+   * The cluster that this VIP is associated with.
+   */
+  clusterId?: string; // uuid
+  /**
+   * The IP address.
+   */
+  ip?: Ip; // ^(?:(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$
+}
 export interface InstallCmdRequest {
   /**
    * Cluster id
@@ -1749,6 +1791,8 @@ export interface IoPerf {
    */
   syncDuration?: number;
 }
+export type Ip = string; // ^(?:(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$
+
 export interface L2Connectivity {
   outgoingNic?: string;
   outgoingIpAddress?: string;
@@ -2317,9 +2361,17 @@ export interface V2ClusterUpdateParams {
    */
   apiVip?: string; // ^(?:(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$
   /**
+   * The virtual IPs used to reach the OpenShift cluster's API. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.
+   */
+  apiVips?: ApiVip[];
+  /**
    * The virtual IP used for cluster ingress traffic.
    */
   ingressVip?: string; // ^(?:(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))?$
+  /**
+   * The virtual IPs used for cluster ingress traffic. Enter one IP address for single-stack clusters, or up to two for dual-stack clusters (at most one IP address per IP stack used). The order of stacks should be the same as order of subnets in Cluster Networks, Service Networks, and Machine Networks.
+   */
+  ingressVips?: IngressVip[];
   /**
    * The domain name used to reach the OpenShift cluster API.
    */
