@@ -101,9 +101,7 @@ export const VirtualIPControlGroup = ({
   const hasDhcpAllocation = !!values.vipDhcpAllocation;
 
   const testCheckbox = React.useCallback((doCheck) => {
-    // TODO PROPER
-    console.log('%c doCheck', 'font-size: 16px; color: red', doCheck);
-
+    // TODO needs to trim the values of the ipvs back to only ipv4
     setAreIpv6VipsEnabled(doCheck);
   }, []);
 

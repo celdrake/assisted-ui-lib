@@ -3,12 +3,23 @@ import { Address4, Address6 } from 'ip-address';
 import { isInSubnet } from 'is-in-subnet';
 import isCIDR from 'is-cidr';
 import { overlap } from 'cidr-tools';
+import intersection from 'lodash/intersection';
 
-import { NetworkConfigurationValues, HostSubnets } from '../../../types/clusters';
+import {
+  NetworkConfigurationValues,
+  HostSubnets,
+  NewNetworkConfigurationValues,
+} from '../../../types/clusters';
 import { NO_SUBNET_SET } from '../../../config/constants';
 import { ProxyFieldsType } from '../../../types';
 import { allSubnetsIPv4, trimCommaSeparatedList, trimSshPublicKey } from './utils';
-import { ClusterNetwork, MachineNetwork, ServiceNetwork } from '../../../api/types';
+import {
+  ApiVip,
+  ClusterNetwork,
+  IngressVip,
+  MachineNetwork,
+  ServiceNetwork,
+} from '../../../api/types';
 import { getErrorMessage } from '../../../utils';
 import {
   bmcAddressValidationMessages,
@@ -152,6 +163,12 @@ export const vipRangeValidationSchema = (
     if (!value) {
       return true;
     }
+
+    if (Array.isArray(value)) {
+      // TODO camador adapt for dual stack VIPS
+      return true;
+    }
+
     try {
       ipValidationSchema.validateSync(value);
     } catch (err) {
@@ -181,7 +198,7 @@ export const vipRangeValidationSchema = (
     return false;
   });
 
-const vipUniqueValidationSchema = ({ ingressVip, apiVip }: NetworkConfigurationValues) =>
+const vipUniqueValidationSchema = (apiVips: ApiVip[], ingressVips: IngressVip[]) =>
   Yup.string().test(
     'vip-uniqueness-validation',
     'The Ingress and API IP addresses cannot be the same.',
@@ -189,7 +206,9 @@ const vipUniqueValidationSchema = ({ ingressVip, apiVip }: NetworkConfigurationV
       if (!value) {
         return true;
       }
-      return ingressVip !== apiVip;
+      const apiIps = (apiVips || []).map((item) => item.ip).filter((ip) => !!ip);
+      const ingressIps = (ingressVips || []).map((item) => item.ip).filter((ip) => !!ip);
+      return intersection(apiIps, ingressIps).length === 0;
     },
   );
 
@@ -215,26 +234,27 @@ export const vipValidationSchema = (
     is: (vipDhcpAllocation, managedNetworkingType) =>
       !vipDhcpAllocation && managedNetworkingType !== 'userManaged',
     then: requiredOnceSet(initialValue, 'Required. Please provide an IP address')
+      // TODO DUDAS CÓMO PERMITIR QUE SEAN UNOS U OTROS CAMPOS SEGÚN EL CASO???
       .concat(vipRangeValidationSchema(hostSubnets, values))
-      .concat(vipUniqueValidationSchema(values))
+      .concat(vipUniqueValidationSchema([{ ip: values.apiVip }], [{ ip: values.ingressVip }]))
       .when('hostSubnet', {
         is: (hostSubnet) => hostSubnet !== NO_SUBNET_SET,
         then: Yup.string().required('Required. Please provide an IP address'),
       }),
   });
 
-// TODO FIX FOR VIPS
+// TODO CELIA avoid code duplication!!!
 export const vipListValidationSchema = (
   hostSubnets: HostSubnets,
-  values: NetworkConfigurationValues,
-  initialValue?: string,
+  values: NewNetworkConfigurationValues,
+  // ipList: ApiVip[] | IngressVip[],
 ) =>
   Yup.mixed().when(['vipDhcpAllocation', 'managedNetworkingType'], {
     is: (vipDhcpAllocation, managedNetworkingType) =>
       !vipDhcpAllocation && managedNetworkingType !== 'userManaged',
-    then: requiredOnceSet(initialValue, 'Required. Please provide an IP address')
+    then: requiredOnceSet('some-value', 'Required. Please provide an IP address')
       .concat(vipRangeValidationSchema(hostSubnets, values))
-      .concat(vipUniqueValidationSchema(values))
+      .concat(vipUniqueValidationSchema(values.apiVips, values.ingressVips))
       .when('hostSubnet', {
         is: (hostSubnet) => hostSubnet !== NO_SUBNET_SET,
         then: Yup.string().required('Required. Please provide an IP address'),

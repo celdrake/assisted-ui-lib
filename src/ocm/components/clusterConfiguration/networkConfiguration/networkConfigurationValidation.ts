@@ -24,6 +24,7 @@ import {
   IngressVip,
   Ip,
   NewNetworkConfigurationValues,
+  vipListValidationSchema,
 } from '../../../../common';
 
 export const selectVips = (
@@ -90,19 +91,15 @@ const getDualStackNetworksValidation = (
 });
 
 export const getNetworkConfigurationValidationSchema = (
-  initialValues: NetworkConfigurationValues,
+  initialValues: NewNetworkConfigurationValues,
   hostSubnets: HostSubnets,
 ) =>
-  Yup.lazy<NetworkConfigurationValues>((values) => {
+  Yup.lazy<NewNetworkConfigurationValues>((values) => {
     return Yup.object<NetworkConfigurationValues>().shape({
-      // apiVip: vipValidationSchema(hostSubnets, values, initialValues.apiVip),
-      // ingressVip: vipValidationSchema(hostSubnets, values, initialValues.ingressVip),
-      // TODO needs work
-      // TODO needs work
       apiVips: Yup.array()
         .of(
           Yup.object().shape({
-            ip: Yup.string(),
+            ip: vipListValidationSchema(hostSubnets, values, initialValues.apiVips),
           }),
         )
         .min(0)
@@ -110,7 +107,7 @@ export const getNetworkConfigurationValidationSchema = (
       ingressVips: Yup.array()
         .of(
           Yup.object().shape({
-            ip: Yup.string(),
+            ip: vipListValidationSchema(hostSubnets, values, initialValues.ingressVips),
           }),
         )
         .min(0)
