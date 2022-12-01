@@ -147,16 +147,16 @@ const NetworkConfiguration = ({
     if (isUserManagedNetworking) {
       // We need to reset these fields' values in order to align with the values the server sends
       setFieldValue('vipDhcpAllocation', false);
-      setFieldValue('ingressVip', '', false);
-      setFieldValue('apiVip', '', false);
+      setFieldValue('ingressVips', [], false);
+      setFieldValue('apiVips', [], false);
 
       if (isMultiNodeCluster) {
         setFieldValue('machineNetworks', [], false);
       }
     } else {
       if (!values.vipDhcpAllocation) {
-        validateField('ingressVip');
-        validateField('apiVip');
+        validateField('ingressVips');
+        validateField('apiVips');
       }
     }
   }, [
@@ -249,8 +249,8 @@ const NetworkConfiguration = ({
           isRequired={!isUserManagedNetworking}
           isDisabled={
             (cluster.vipDhcpAllocation &&
-              cluster.apiVip === undefined &&
-              cluster.ingressVip === undefined) ||
+              !cluster.apiVips?.length &&
+              !cluster.ingressVips?.length) ||
             false
           }
         />

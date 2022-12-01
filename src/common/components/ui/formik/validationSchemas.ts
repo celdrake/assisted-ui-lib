@@ -223,6 +223,24 @@ export const vipValidationSchema = (
       }),
   });
 
+// TODO FIX FOR VIPS
+export const vipListValidationSchema = (
+  hostSubnets: HostSubnets,
+  values: NetworkConfigurationValues,
+  initialValue?: string,
+) =>
+  Yup.mixed().when(['vipDhcpAllocation', 'managedNetworkingType'], {
+    is: (vipDhcpAllocation, managedNetworkingType) =>
+      !vipDhcpAllocation && managedNetworkingType !== 'userManaged',
+    then: requiredOnceSet(initialValue, 'Required. Please provide an IP address')
+      .concat(vipRangeValidationSchema(hostSubnets, values))
+      .concat(vipUniqueValidationSchema(values))
+      .when('hostSubnet', {
+        is: (hostSubnet) => hostSubnet !== NO_SUBNET_SET,
+        then: Yup.string().required('Required. Please provide an IP address'),
+      }),
+  });
+
 export const ipBlockValidationSchema = (reservedCidrs: string | string[] | undefined) =>
   Yup.string()
     .required('A value is required.')

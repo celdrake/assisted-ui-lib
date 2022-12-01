@@ -16,7 +16,34 @@ import {
   IPV4_STACK,
   DUAL_STACK,
   ClusterDefaultConfig,
+  ApiVip,
+  MachineNetwork,
+  ServiceNetwork,
+  ClusterNetwork,
+  macAddressValidationSchema,
+  IngressVip,
+  Ip,
+  NewNetworkConfigurationValues,
 } from '../../../../common';
+
+export const selectVips = (
+  ipList?: ApiVip[] | IngressVip[],
+  ip?: string,
+): ApiVip[] | IngressVip[] => {
+  if (ipList && ipList.length > 0) {
+    return ipList;
+  }
+  return ip ? [{ ip }] : [];
+};
+
+export const selectVip = (ipList?: ApiVip[] | IngressVip[], ip?: string): Ip | undefined => {
+  const vips = selectVips(ipList, ip);
+
+  if (vips.length > 0) {
+    return vips[0].ip;
+  }
+  return '';
+};
 
 export const getNetworkInitialValues = (
   cluster: Cluster,
@@ -27,13 +54,13 @@ export const getNetworkInitialValues = (
     | 'serviceNetworksIpv4'
     | 'serviceNetworksDualstack'
   >,
-): NetworkConfigurationValues => {
+): NewNetworkConfigurationValues => {
   const isSNOCluster = isSNO(cluster);
   const isDualStackType = isDualStack(cluster);
 
   return {
-    apiVip: cluster.apiVip || '',
-    ingressVip: cluster.ingressVip || '',
+    apiVips: selectVips(cluster.apiVips, cluster.apiVip),
+    ingressVips: selectVips(cluster.ingressVips, cluster.ingressVip),
     sshPublicKey: cluster.sshPublicKey || '',
     vipDhcpAllocation: cluster.vipDhcpAllocation,
     managedNetworkingType: cluster.userManagedNetworking ? 'userManaged' : 'clusterManaged',
@@ -53,41 +80,56 @@ export const getNetworkInitialValues = (
   };
 };
 
+const getDualStackNetworksValidation = (
+  networks: MachineNetwork[] | ServiceNetwork[] | ClusterNetwork[] | undefined,
+  networkLabel: string,
+) => ({
+  is: IPV4_STACK,
+  then: IPv4ValidationSchema,
+  otherwise: networks && networks.length >= 2 && dualStackValidationSchema(networkLabel),
+});
+
 export const getNetworkConfigurationValidationSchema = (
   initialValues: NetworkConfigurationValues,
   hostSubnets: HostSubnets,
 ) =>
-  Yup.lazy<NetworkConfigurationValues>((values) =>
-    Yup.object<NetworkConfigurationValues>().shape({
-      apiVip: vipValidationSchema(hostSubnets, values, initialValues.apiVip),
-      ingressVip: vipValidationSchema(hostSubnets, values, initialValues.ingressVip),
+  Yup.lazy<NetworkConfigurationValues>((values) => {
+    return Yup.object<NetworkConfigurationValues>().shape({
+      // apiVip: vipValidationSchema(hostSubnets, values, initialValues.apiVip),
+      // ingressVip: vipValidationSchema(hostSubnets, values, initialValues.ingressVip),
+      // TODO needs work
+      // TODO needs work
+      apiVips: Yup.array()
+        .of(
+          Yup.object().shape({
+            ip: Yup.string(),
+          }),
+        )
+        .min(0)
+        .max(2), // TODO check if dual stack vs single stack for max??
+      ingressVips: Yup.array()
+        .of(
+          Yup.object().shape({
+            ip: Yup.string(),
+          }),
+        )
+        .min(0)
+        .max(2),
       sshPublicKey: sshPublicKeyValidationSchema,
       machineNetworks:
         values.managedNetworkingType === 'userManaged'
           ? Yup.array()
-          : machineNetworksValidationSchema.when('stackType', {
-              is: IPV4_STACK,
-              then: IPv4ValidationSchema,
-              otherwise:
-                values.machineNetworks &&
-                values.machineNetworks?.length >= 2 &&
-                dualStackValidationSchema('machine networks'),
-            }),
-      clusterNetworks: clusterNetworksValidationSchema.when('stackType', {
-        is: IPV4_STACK,
-        then: IPv4ValidationSchema,
-        otherwise:
-          values.clusterNetworks &&
-          values.clusterNetworks?.length >= 2 &&
-          dualStackValidationSchema('cluster network'),
-      }),
-      serviceNetworks: serviceNetworkValidationSchema.when('stackType', {
-        is: IPV4_STACK,
-        then: IPv4ValidationSchema,
-        otherwise:
-          values.serviceNetworks &&
-          values.serviceNetworks?.length >= 2 &&
-          dualStackValidationSchema('service network'),
-      }),
-    }),
-  );
+          : machineNetworksValidationSchema.when(
+              'stackType',
+              getDualStackNetworksValidation(values.machineNetworks, 'machine network'),
+            ),
+      clusterNetworks: clusterNetworksValidationSchema.when(
+        'stackType',
+        getDualStackNetworksValidation(values.clusterNetworks, 'cluster network'),
+      ),
+      serviceNetworks: serviceNetworkValidationSchema.when(
+        'stackType',
+        getDualStackNetworksValidation(values.serviceNetworks, 'service network'),
+      ),
+    });
+  });

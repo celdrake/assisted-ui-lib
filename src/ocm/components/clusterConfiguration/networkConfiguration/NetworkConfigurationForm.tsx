@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Formik, FormikConfig, useFormikContext } from 'formik';
 import { Form, Grid, GridItem, Text, TextContent } from '@patternfly/react-core';
 import {
+  ApiVip,
   Cluster,
   ClusterDefaultConfig,
   ClusterWizardStep,
@@ -12,10 +13,12 @@ import {
   getHostSubnets,
   HostSubnets,
   InfraEnv,
+  IngressVip,
   IPV4_STACK,
   isSNO,
   LoadingState,
   NetworkConfigurationValues,
+  NewNetworkConfigurationValues,
   SecurityFields,
   useAlerts,
   useFormikAutoSave,
@@ -123,6 +126,31 @@ const NetworkConfigurationForm: React.FC<{
   );
 };
 
+const clearVips = (params: V2ClusterUpdateParams) => {
+  delete params.apiVips;
+  delete params.ingressVips;
+
+  // TODO remove the individual fields when they are fully deprecated
+  delete params.apiVip;
+  delete params.ingressVip;
+};
+
+const adaptPatchVips = (
+  isDualStack: boolean,
+  ips: ApiVip[] | IngressVip[],
+): ApiVip[] | IngressVip[] => {
+  if (!isDualStack || ips.length < 2) {
+    return ips;
+  }
+
+  const ipv6 = ips[1].ip;
+  if (!ipv6) {
+    // Handle the case where ipv6 has been deleted, the array must keep only the ipv4 item
+    return [ips[0]];
+  }
+  return ips;
+};
+
 const NetworkConfigurationPage = ({ cluster }: { cluster: Cluster }) => {
   const {
     infraEnv,
@@ -169,16 +197,24 @@ const NetworkConfigurationPage = ({ cluster }: { cluster: Cluster }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [infraEnvError]);
 
-  const handleSubmit: FormikConfig<NetworkConfigurationValues>['onSubmit'] = async (values) => {
+  const handleSubmit: FormikConfig<NewNetworkConfigurationValues>['onSubmit'] = async (values) => {
     clearAlerts();
     // update the cluster configuration
     try {
       const isMultiNodeCluster = !isSNO(cluster);
       const isUserManagedNetworking = values.managedNetworkingType === 'userManaged';
 
+      const isDualStack = values.stackType === 'dualStack';
+      const adaptedApiVips = adaptPatchVips(isDualStack, values.apiVips);
+      const adaptedIngressVips = adaptPatchVips(isDualStack, values.ingressVips);
+      const fistApiVip = adaptedApiVips.length === 0 ? '' : adaptedApiVips[0].ip;
+      const fistIngressVip = adaptedIngressVips.length === 0 ? '' : adaptedIngressVips[0].ip;
+
       const params: V2ClusterUpdateParams = {
-        apiVip: values.apiVip,
-        ingressVip: values.ingressVip,
+        apiVip: fistApiVip,
+        apiVips: adaptedApiVips,
+        ingressVip: fistIngressVip,
+        ingressVips: adaptedIngressVips,
         sshPublicKey: values.sshPublicKey,
         vipDhcpAllocation: values.vipDhcpAllocation,
         networkType: values.networkType,
@@ -189,16 +225,14 @@ const NetworkConfigurationPage = ({ cluster }: { cluster: Cluster }) => {
       };
 
       if (params.userManagedNetworking) {
-        delete params.apiVip;
-        delete params.ingressVip;
+        clearVips(params);
         if (isMultiNodeCluster) {
           delete params.machineNetworks;
         }
       } else {
         // cluster-managed can't be chosen in SNO, so this must be a multi-node cluster
         if (values.vipDhcpAllocation) {
-          delete params.apiVip;
-          delete params.ingressVip;
+          clearVips(params);
         } else if (values.stackType === IPV4_STACK) {
           // The API will rebuild the default machineNetwork
           params.machineNetworks = [];

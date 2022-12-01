@@ -24,6 +24,9 @@ export type HostSubnet = {
   humanized: string;
 };
 export type HostSubnets = HostSubnet[];
+
+type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
+
 export type NetworkConfigurationValues = Pick<
   V2ClusterUpdateParams,
   | 'clusterNetworkCidr'
@@ -42,6 +45,12 @@ export type NetworkConfigurationValues = Pick<
   managedNetworkingType: 'userManaged' | 'clusterManaged';
   stackType?: 'singleStack' | 'dualStack';
 };
+
+// TODO camador swap this type as "NetworkConfigurationValues" when CIM adapts and /or the individual apiIp,ingressIp fields are deprecated
+export type NewNetworkConfigurationValues = NetworkConfigurationValues &
+  Omit<NetworkConfigurationValues, 'apiVip' | 'ingressVip'> &
+  WithRequired<Pick<V2ClusterUpdateParams, 'apiVips' | 'ingressVips'>, 'apiVips' | 'ingressVips'>;
+
 export type HostDiscoveryValues = V2ClusterUpdateParams & {
   usePlatformIntegration: boolean;
   schedulableMasters: boolean;

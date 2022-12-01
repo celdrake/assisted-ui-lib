@@ -1,121 +1,78 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { useFormikContext } from 'formik';
-import { Spinner, Alert, AlertVariant, Tooltip } from '@patternfly/react-core';
+import { Grid, Tooltip } from '@patternfly/react-core';
+import { FieldArray, useFormikContext } from 'formik';
 import {
   Cluster,
-  NetworkConfigurationValues,
-  ValidationsInfo,
-  FormikStaticField,
   FeatureSupportLevelBadge,
+  getFormikArrayItemFieldName,
   NETWORK_TYPE_SDN,
+  NewNetworkConfigurationValues,
   stringToJSON,
-  selectMachineNetworkCIDR,
+  ValidationsInfo,
 } from '../../../../common';
 import { selectCurrentClusterPermissionsState } from '../../../selectors';
-import { OcmCheckboxField, OcmInputField } from '../../ui/OcmFormFields';
-
-interface VipStaticValueProps {
-  vipName: string;
-  cluster: Cluster;
-  validationErrorMessage?: string;
-}
-
-const VipStaticValue = ({ vipName, cluster, validationErrorMessage }: VipStaticValueProps) => {
-  const { vipDhcpAllocation } = cluster;
-  const machineNetworkCidr = selectMachineNetworkCIDR(cluster);
-
-  if (vipDhcpAllocation && cluster[vipName]) {
-    return <>{cluster[vipName]}</>;
-  }
-  if (vipDhcpAllocation && validationErrorMessage) {
-    return (
-      <Alert
-        variant={AlertVariant.danger}
-        title="The DHCP server failed to allocate the IP"
-        isInline
-      >
-        {validationErrorMessage}
-      </Alert>
-    );
-  }
-  if (vipDhcpAllocation && machineNetworkCidr) {
-    return (
-      <>
-        <Spinner size="md" />
-        <i> This IP is being allocated by the DHCP server</i>
-      </>
-    );
-  }
-  return <i>This IP will be allocated by the DHCP server</i>;
-};
-
-const getVipHelperSuffix = (
-  vip?: string,
-  vipDhcpAllocation?: boolean,
-  vipDhcpAllocationFormValue?: boolean,
-): string => {
-  if (!vipDhcpAllocationFormValue) {
-    return 'Make sure that the VIP is unique and not used by any other device on your network.';
-  }
-  if (vipDhcpAllocation && vip) {
-    return 'This IP was allocated by the DHCP server.';
-  }
-  return '';
-};
-
-const getVipValidationsById = (
-  validationsInfoString?: Cluster['validationsInfo'],
-): { [key: string]: string | undefined } => {
-  const validationsInfo = stringToJSON<ValidationsInfo>(validationsInfoString) || {};
-  const failedDhcpAllocationMessageStubs = [
-    'VIP IP allocation from DHCP server has been timed out', // TODO(jtomasek): remove this one once it is no longer in backend
-    'IP allocation from the DHCP server timed out.',
-  ];
-  return (validationsInfo.network || []).reduce((lookup, validation) => {
-    if (['api-vip-defined', 'ingress-vip-defined'].includes(validation.id)) {
-      lookup[validation.id] =
-        validation.status === 'failure' &&
-        failedDhcpAllocationMessageStubs.find((stub) => validation.message.match(stub))
-          ? validation.message
-          : undefined;
-    }
-    return lookup;
-  }, {});
-};
+import { OcmCheckbox, OcmCheckboxField } from '../../ui/OcmFormFields';
+import VirtualIpField from './VirtualIpField';
+import { selectVip } from './networkConfigurationValidation';
+import { ProtocolVersion } from '../staticIp/data/dataTypes';
 
 export type VirtualIPControlGroupProps = {
   cluster: Cluster;
   isVipDhcpAllocationDisabled?: boolean;
 };
 
+// TODO real selector in the correct place
+const getVipValidationsById = (validationsInfoString?: Cluster['validationsInfo']) => {
+  const validationsInfo = stringToJSON<ValidationsInfo>(validationsInfoString) || {};
+  const failedDhcpAllocationMessageStubs = [
+    'VIP IP allocation from DHCP server has been timed out', // TODO(jtomasek): remove this one once it is no longer in backend
+    'IP allocation from the DHCP server timed out.',
+  ];
+  return (validationsInfo.network || []).reduce(
+    (lookup, validation) => {
+      if (['api-vip-defined', 'ingress-vip-defined'].includes(validation.id)) {
+        const ipField = validation.id === 'api-vip-defined' ? 'apiVip' : 'ingressVip';
+        const hasError =
+          validation.status === 'failure' &&
+          failedDhcpAllocationMessageStubs.find((stub) => validation.message.match(stub));
+
+        if (hasError) {
+          lookup[ipField] = validation.message;
+        }
+      }
+      return lookup;
+    },
+    {
+      apiVip: '',
+      ingressVip: '',
+    },
+  );
+};
+
+const apiVipFieldName = 'apiVips';
+const ingressVipFieldName = 'ingressVips';
+
 export const VirtualIPControlGroup = ({
   cluster,
   isVipDhcpAllocationDisabled,
 }: VirtualIPControlGroupProps) => {
-  const { values, setFieldValue } = useFormikContext<NetworkConfigurationValues>();
+  const { values, setFieldValue } = useFormikContext<NewNetworkConfigurationValues>();
   const { isViewerMode } = useSelector(selectCurrentClusterPermissionsState);
 
-  const apiVipHelperText = `Provide an endpoint for users, both human and machine, to interact with and configure the platform. If needed, contact your IT manager for more information. ${getVipHelperSuffix(
-    cluster.apiVip,
-    cluster.vipDhcpAllocation,
-    values.vipDhcpAllocation,
-  )}`;
-  const ingressVipHelperText = `Provide an endpoint for application traffic flowing in from outside the cluster. If needed, contact your IT manager for more information. ${getVipHelperSuffix(
-    cluster.ingressVip,
-    cluster.vipDhcpAllocation,
-    values.vipDhcpAllocation,
-  )}`;
+  const clusterApiVip = selectVip(cluster.apiVips, cluster.apiVip);
+  const clusterIngressVip = selectVip(cluster.ingressVips, cluster.ingressVip);
 
-  const {
-    'api-vip-defined': apiVipFailedValidationMessage,
-    'ingress-vip-defined': ingressVipFailedValidationMessage,
-  } = React.useMemo(
+  const hasFilledIPv6Vips = values.apiVips.length > 1; // TODO better
+  const [areIpv6VipsEnabled, setAreIpv6VipsEnabled] = React.useState<boolean>(hasFilledIPv6Vips);
+
+  const enableAllocation = values.networkType === NETWORK_TYPE_SDN;
+
+  // TODO does it change for dual-stack??? is there a way to determine which one it is??
+  const vipValidationErrors = React.useMemo(
     () => getVipValidationsById(cluster.validationsInfo),
     [cluster.validationsInfo],
   );
-
-  const enableAllocation = values.networkType === NETWORK_TYPE_SDN;
 
   React.useEffect(() => {
     if (!isViewerMode && !enableAllocation) {
@@ -126,11 +83,29 @@ export const VirtualIPControlGroup = ({
   const onChangeDhcp = React.useCallback(
     (hasDhcp: boolean) => {
       // We need to sync the values back to the form
-      setFieldValue('apiVip', hasDhcp ? '' : cluster.apiVip);
-      setFieldValue('ingressVip', hasDhcp ? '' : cluster.ingressVip);
+      setFieldValue('apiVips', hasDhcp ? [] : clusterApiVip);
+      setFieldValue('ingressVips', hasDhcp ? [] : clusterIngressVip);
     },
-    [cluster.apiVip, cluster.ingressVip, setFieldValue],
+    [clusterApiVip, clusterIngressVip, setFieldValue],
   );
+
+  const isDualStack = values.stackType === 'dualStack';
+  const hasFilledIpv4Fields = React.useMemo(() => {
+    return (
+      values.apiVips.length >= 1 &&
+      !!values.apiVips[0].ip &&
+      values.ingressVips.length >= 1 &&
+      !!values.ingressVips[0].ip
+    );
+  }, [values.apiVips, values.ingressVips]);
+  const hasDhcpAllocation = !!values.vipDhcpAllocation;
+
+  const testCheckbox = React.useCallback((doCheck) => {
+    // TODO PROPER
+    console.log('%c doCheck', 'font-size: 16px; color: red', doCheck);
+
+    setAreIpv6VipsEnabled(doCheck);
+  }, []);
 
   return (
     <>
@@ -157,48 +132,73 @@ export const VirtualIPControlGroup = ({
           isDisabled={!enableAllocation}
         />
       )}
-      {values.vipDhcpAllocation ? (
-        <>
-          <FormikStaticField
-            label="API IP"
-            name="apiVip"
-            helperText={apiVipHelperText}
-            value={values.apiVip || ''}
-            isValid={!apiVipFailedValidationMessage}
-            isRequired
-          >
-            <VipStaticValue
-              vipName="apiVip"
+
+      <FieldArray
+        name={'clusterVips'}
+        validateOnChange={false}
+        render={() => (
+          <Grid hasGutter>
+            <VirtualIpField
+              vipField={'apiVip'}
+              fieldName={`${getFormikArrayItemFieldName(apiVipFieldName, 0)}.ip`}
+              fieldValue={values.apiVips?.length > 0 ? values.apiVips[0].ip : ''}
+              protocolVersion={isDualStack ? ProtocolVersion.ipv4 : undefined}
               cluster={cluster}
-              validationErrorMessage={apiVipFailedValidationMessage}
+              hasDhcpAllocation={hasDhcpAllocation}
+              validationError={vipValidationErrors.apiVip}
             />
-          </FormikStaticField>
-          <FormikStaticField
-            label="Ingress IP"
-            name="ingressVip"
-            helperText={ingressVipHelperText}
-            value={values.ingressVip || ''}
-            isValid={!ingressVipFailedValidationMessage}
-            isRequired
-          >
-            <VipStaticValue
-              vipName="ingressVip"
+            <VirtualIpField
+              vipField={'ingressVip'}
+              fieldName={`${getFormikArrayItemFieldName(ingressVipFieldName, 0)}.ip`}
+              fieldValue={values.ingressVips?.length > 0 ? values.ingressVips[0].ip : ''}
+              protocolVersion={isDualStack ? ProtocolVersion.ipv4 : undefined}
               cluster={cluster}
-              validationErrorMessage={ingressVipFailedValidationMessage}
+              hasDhcpAllocation={hasDhcpAllocation}
+              validationError={vipValidationErrors.ingressVip}
             />
-          </FormikStaticField>
-        </>
-      ) : (
-        <>
-          <OcmInputField label="API IP" name="apiVip" helperText={apiVipHelperText} isRequired />
-          <OcmInputField
-            name="ingressVip"
-            label="Ingress IP"
-            helperText={ingressVipHelperText}
-            isRequired
-          />
-        </>
-      )}
+            {isDualStack && (
+              <Tooltip
+                content={
+                  'After you define API and Ingress IPs for IPv4, you can also define them for IPv6'
+                }
+                hidden={hasFilledIpv4Fields}
+                position={'top-start'}
+              >
+                <OcmCheckbox
+                  id={'useDualStackIpv6Vips'}
+                  label={'Use IPv6 API and Ingress IPs'}
+                  description={'Some description'}
+                  isChecked={areIpv6VipsEnabled}
+                  isDisabled={!hasFilledIpv4Fields}
+                  onChange={testCheckbox}
+                />
+              </Tooltip>
+            )}
+            {areIpv6VipsEnabled && (
+              <>
+                <VirtualIpField
+                  vipField={'apiVip'}
+                  fieldName={`${getFormikArrayItemFieldName(apiVipFieldName, 1)}.ip`}
+                  fieldValue={values.apiVips.length > 1 ? values.apiVips[1].ip : ''}
+                  cluster={cluster}
+                  protocolVersion={ProtocolVersion.ipv6}
+                  hasDhcpAllocation={hasDhcpAllocation}
+                  validationError={vipValidationErrors.apiVip}
+                />
+                <VirtualIpField
+                  vipField={'ingressVip'}
+                  fieldName={`${getFormikArrayItemFieldName(ingressVipFieldName, 1)}.ip`}
+                  fieldValue={values.ingressVips.length > 1 ? values.ingressVips[1].ip : ''}
+                  cluster={cluster}
+                  protocolVersion={ProtocolVersion.ipv6}
+                  hasDhcpAllocation={hasDhcpAllocation}
+                  validationError={vipValidationErrors.ingressVip}
+                />
+              </>
+            )}
+          </Grid>
+        )}
+      />
     </>
   );
 };
