@@ -3,7 +3,6 @@ import { Address4, Address6 } from 'ip-address';
 import { isInSubnet } from 'is-in-subnet';
 import isCIDR from 'is-cidr';
 import { overlap } from 'cidr-tools';
-import intersection from 'lodash/intersection';
 
 import {
   NetworkConfigurationValues,
@@ -199,18 +198,21 @@ export const vipRangeValidationSchema = (
   });
 
 const vipUniqueValidationSchema = (apiVips: ApiVip[], ingressVips: IngressVip[]) =>
-  Yup.string().test(
-    'vip-uniqueness-validation',
-    'The Ingress and API IP addresses cannot be the same.',
-    (value) => {
+  Yup.string().test({
+    name: 'vip-uniqueness-validation',
+    message: 'The Ingress and API IP addresses cannot be the same.',
+    test(value) {
       if (!value) {
         return true;
       }
-      const apiIps = (apiVips || []).map((item) => item.ip).filter((ip) => !!ip);
-      const ingressIps = (ingressVips || []).map((item) => item.ip).filter((ip) => !!ip);
-      return intersection(apiIps, ingressIps).length === 0;
+      const { path } = this;
+      const isIpv6Field = path.includes(`[1].ip`);
+      const apiVip = isIpv6Field && apiVips.length > 1 ? apiVips[1].ip : apiVips[0].ip;
+      const ingressVip =
+        isIpv6Field && ingressVips.length > 1 ? ingressVips[1].ip : ingressVips[0].ip;
+      return apiVip !== ingressVip;
     },
-  );
+  });
 
 // like .required() but passes for initially empty field
 const requiredOnceSet = (initialValue?: string, message?: string) =>
@@ -234,7 +236,7 @@ export const vipValidationSchema = (
     is: (vipDhcpAllocation, managedNetworkingType) =>
       !vipDhcpAllocation && managedNetworkingType !== 'userManaged',
     then: requiredOnceSet(initialValue, 'Required. Please provide an IP address')
-      // TODO DUDAS CÓMO PERMITIR QUE SEAN UNOS U OTROS CAMPOS SEGÚN EL CASO???
+      // TODO adapt code to work for CIM and OCM with different fields (apiVip vs apiVips etc)
       .concat(vipRangeValidationSchema(hostSubnets, values))
       .concat(vipUniqueValidationSchema([{ ip: values.apiVip }], [{ ip: values.ingressVip }]))
       .when('hostSubnet', {
@@ -247,7 +249,7 @@ export const vipValidationSchema = (
 export const vipListValidationSchema = (
   hostSubnets: HostSubnets,
   values: NewNetworkConfigurationValues,
-  // ipList: ApiVip[] | IngressVip[],
+  /*  ipList: ApiVip[] | IngressVip[], */
 ) =>
   Yup.mixed().when(['vipDhcpAllocation', 'managedNetworkingType'], {
     is: (vipDhcpAllocation, managedNetworkingType) =>
