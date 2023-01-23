@@ -1,5 +1,4 @@
 import { TFunction } from 'i18next';
-import * as packageJson from '../../../package.json';
 import { ValidationsInfo, HostRole } from '../types/hosts';
 import { Cluster, ClusterValidationId, DiskRole, Event, HostValidationId } from '../api';
 import { ValidationGroup as ClusterValidationGroup } from '../types/clusters';
