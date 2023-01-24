@@ -16,7 +16,7 @@
     "yaml": "^1.7.2"
   },
   "scripts": {
-    "run-tests": "yarn cypress open"
+    "cypress:open": "yarn cypress open"
   },
   "devDependencies": {
     "@babel/core": "^7.3.4",

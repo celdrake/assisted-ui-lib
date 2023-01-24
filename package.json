@@ -55,7 +55,7 @@
     "build:apps/assisted-ui": "yarn workspace assisted-ui run build",
     "preview:apps/assisted-ui": "yarn workspace assisted-ui run preview",
     "serve:apps/assisted-ui": "yarn workspace assisted-ui serve",
-    "run-tests:tests/integration": "yarn workspace openshift-assisted-ui-tests run run-tests",
+    "open-tests": "yarn workspace openshift-assisted-ui-tests run cypress:open",
     "clean": "rm -rf {apps,libs}/*/{node_modules,build,.cache} node_modules",
     "update-api": "scripts/update-api.sh",
     "i18n": "scripts/i18n.sh"
