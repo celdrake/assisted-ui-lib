@@ -1,0 +1,42 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/integration-tests/src",
+  "projectType": "application",
+  "targets": {
+    "run-tests": {
+      "executor": "@nrwl/cypress:cypress",
+      "options": {
+        "cypressConfig": "packages/integration-tests/cypress.json",
+        "devServerTarget": ""
+      },
+      "configurations": {
+        "production": {
+          "devServerTarget": ""
+        }
+      }
+    },
+    "open-tests": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          {
+            "command": "yarn cypress open --project=packages/integration-tests"
+          }
+        ]
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": [
+        "{options.outputFile}"
+      ],
+      "options": {
+        "lintFilePatterns": [
+          "packages/integration-tests/**/*.{js,ts}"
+        ]
+      }
+    }
+  },
+  "tags": [],
+  "implicitDependencies": []
+}
