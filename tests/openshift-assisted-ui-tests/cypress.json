@@ -9,7 +9,7 @@
   "videosFolder": "cypress/videos",
   "screenshotsFolder": "cypress/screenshots",
   "chromeWebSecurity": false,
-  "baseUrl": "http://localhost:3000",
+  "baseUrl": "http://localhost:4173",
   "viewportWidth": 1440,
   "viewportHeight": 1080,
   "execTimeout": 12000,

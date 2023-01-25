@@ -1,0 +1,43 @@
+name: Cypress Tests
+
+## Runs the Cypress Integration tests project based on the creation of a comment in a PR review
+## The comment must start with "/ocm-integration-tests", then:
+## - It can be followed by a branch name, in which case the tests will run from that branch in openshift-assisted-ui
+## - If no branch name is specified, "main" branch will be the one used
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - edited
+    branches:
+      - master
+      - releases/*
+      - CIM-*
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Assisted-UI for local server
+        run: |
+          yarn install --frozen-lockfile
+          yarn build:apps/assisted-ui
+
+      # Run Cypress tests in Headless mode
+      - name: Cypress run
+        uses: cypress-io/github-action@v4.1.0
+        with:
+          working-directory: ./tests/openshift-assisted-ui-tests
+          browser: chrome
+          config-file: cypress.json
+          config: video=false
+          env: CYPRESS_API_BASE_URL=https://localhost:3000
+          start:
+            yarn preview:apps/assisted-ui
+          spec: |
+            ./src/integration/create-multinode/*.spec.ts
+            ./src/integration/ui-behaviour/*.spec.ts
