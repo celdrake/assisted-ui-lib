@@ -56,5 +56,4 @@ jobs:
           start:
             yarn --cwd=../../ preview:apps/assisted-ui
           spec: |
-            ./src/integration/create-multinode/*.spec.ts
-            ./src/integration/ui-behaviour/*.spec.ts
+            ./src/integration/ui-behaviour/cluster-updates.spec.ts

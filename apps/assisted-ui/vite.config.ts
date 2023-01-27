@@ -9,7 +9,7 @@ const buildServerConfig = (env: Record<string, string>) => ({
       target: 'http://localhost:3000',
       // TODO not working, check why
       // target: env.VITE_APP_API_URL,
-      changeOrigin: true,
+      changeOrigin: false,
     }
   },
 });
