@@ -25,13 +25,15 @@ describe(`Assisted Installer Multinode Cluster Installation`, () => {
       clusterDetailsPage.getRedHatDnsServiceCheck().check();
       clusterDetailsPage.inputOpenshiftVersion();
       clusterDetailsPage.inputPullSecret();
-      
+
       commonActions.getInfoAlert().should('not.exist');
       commonActions.clickNextButton();
 
       cy.wait('@create-cluster');
       cy.wait('@create-infra-env');
       utils.setLastWizardSignal('CLUSTER_CREATED');
+
+      commonActions.waitForNext();
       commonActions.clickNextButton();
 
       cy.get('h2').should('contain', 'Host discovery');
