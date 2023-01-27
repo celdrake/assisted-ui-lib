@@ -1,38 +1,26 @@
-import {commonActions} from '../../views/common';
-import {navbar} from '../../views/navbar';
+import { navbar } from '../../views/navbar';
+import { transformBasedOnUIVersion } from '../../support/transformations';
+import { commonActions } from '../../views/common';
 
 describe('Assisted Installer UI behaviour - cluster updates', () => {
-    describe('Cypress loading', () => {
-        beforeEach(() => {
-            cy.loadAiAPIIntercepts(null);
-        })
-        it('Should have loaded any page', () => {
-            cy.visit('http://localhost:3000')
-            cy.get('body').should('exist');
+    before(() => {
+        cy.loadAiAPIIntercepts({
+            activeSignal: 'READY_TO_INSTALL',
+            activeScenario: 'AI_CREATE_MULTINODE',
         });
+        transformBasedOnUIVersion();
+    });
 
-        it('Should see a list of clusters', () => {
-            cy.visit('http://localhost:3000')
-            cy.get('table[aria-label="Clusters table"]').should('be.visible');
-            cy.get('table[aria-label="Clusters table"] tbody tr').should('have.length', 1);
+    beforeEach(() => {
+        cy.loadAiAPIIntercepts(null);
+        commonActions.visitClusterDetailsPage();
+    });
 
-            cy.get('h1').should('contain', 'Assisted Clusters');
-        });
+    afterEach(() => {
+        Cypress.env('AI_FORBIDDEN_CLUSTER_PATCH', false);
     });
 
     describe('Prevent invalid PATCH requests', () => {
-        beforeEach(() => {
-            cy.loadAiAPIIntercepts({
-                activeSignal: 'READY_TO_INSTALL',
-                activeScenario: 'AI_CREATE_MULTINODE',
-            });
-            commonActions.visitClusterDetailsPage();
-        });
-
-        afterEach(() => {
-            Cypress.env('AI_FORBIDDEN_CLUSTER_PATCH', false);
-        });
-
         it('Should not update a cluster when no changes were done by the user', () => {
             Cypress.env('AI_FORBIDDEN_CLUSTER_PATCH', true);
 
