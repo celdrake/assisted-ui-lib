@@ -19,9 +19,10 @@ describe(`Assisted Installer SNO Review`, () => {
 
   describe('Cluster summary', () => {
     it('Should be ready to install', () => {
-      reviewAndCreatePage.checkAllValidationsPassed(reviewAndCreatePage.getClusterValidations());
-      reviewAndCreatePage.checkAllValidationsPassed(reviewAndCreatePage.getHostValidations());
       reviewAndCreatePage.validateClusterDetails();
+      reviewAndCreatePage.expandPreflightCheckSection();
+      reviewAndCreatePage.checkAllClusterValidationsPassed();
+      reviewAndCreatePage.checkAllHostsValidationsPassed();
       reviewAndCreatePage.waitForInstallButton();
     });
   });

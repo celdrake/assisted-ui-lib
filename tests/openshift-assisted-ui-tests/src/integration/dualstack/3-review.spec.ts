@@ -16,9 +16,10 @@ describe(`Assisted Installer Dualstack Review`, () => {
   });
 
   it('Should be ready to install', () => {
-    reviewAndCreatePage.checkAllValidationsPassed(reviewAndCreatePage.getClusterValidations());
-    reviewAndCreatePage.checkAllValidationsPassed(reviewAndCreatePage.getHostValidations());
     reviewAndCreatePage.validateClusterDetails({ stackType: 'Dual-stack' });
+    reviewAndCreatePage.expandPreflightCheckSection();
+    reviewAndCreatePage.checkAllClusterValidationsPassed();
+    reviewAndCreatePage.checkAllHostsValidationsPassed();
     reviewAndCreatePage.waitForInstallButton();
   });
 });

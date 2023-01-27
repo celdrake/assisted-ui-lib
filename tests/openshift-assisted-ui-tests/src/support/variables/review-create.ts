@@ -1,9 +1,10 @@
 // Review and Create
 
-// validations
-Cypress.env('clusterValidations', '.review-expandable');
-Cypress.env('clusterValidationsValueId', '[data-testid=cluster-validations-value]');
-Cypress.env('hostValidationsValueId', '[data-testid=host-validations-value]');
+// Preflight check section
+Cypress.env('preflightChecksSectionExpander', '.review-expandable button');
+Cypress.env('clusterPreflightChecksTitle', '[data-testid=cluster-preflight-checks-title]');
+Cypress.env('clusterPreflightChecksResult', '[data-testid=cluster-preflight-checks-value]');
+Cypress.env('hostsPreflightChecksResult', '[data-testid=host-preflight-checks-value]');
 Cypress.env('allValidationsPassedText', 'All validations passed');
 
 // summary
