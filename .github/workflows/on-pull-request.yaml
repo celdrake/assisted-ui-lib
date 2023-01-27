@@ -9,8 +9,6 @@ on:
       - ready_for_review
       - edited
     branches:
-      - master
-      - releases/*
       - CIM-*
 
 jobs:
