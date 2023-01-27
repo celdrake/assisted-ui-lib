@@ -1,5 +1,5 @@
-import { commonActions } from '../../views/common';
-import { navbar } from '../../views/navbar';
+import {commonActions} from '../../views/common';
+import {navbar} from '../../views/navbar';
 
 describe('Assisted Installer UI behaviour - cluster updates', () => {
     describe('Cypress loading', () => {
@@ -21,28 +21,25 @@ describe('Assisted Installer UI behaviour - cluster updates', () => {
     });
 
     describe('Prevent invalid PATCH requests', () => {
-      beforeEach(() => {
-        cy.loadAiAPIIntercepts({
-          activeSignal: 'READY_TO_INSTALL',
-          activeScenario: 'AI_CREATE_MULTINODE',
+        beforeEach(() => {
+            cy.loadAiAPIIntercepts({
+                activeSignal: 'READY_TO_INSTALL',
+                activeScenario: 'AI_CREATE_MULTINODE',
+            });
+            commonActions.visitClusterDetailsPage();
         });
-      });
 
-      afterEach(() => {
-        Cypress.env('AI_FORBIDDEN_CLUSTER_PATCH', false);
-      });
+        afterEach(() => {
+            Cypress.env('AI_FORBIDDEN_CLUSTER_PATCH', false);
+        });
 
-      it('Should not update a cluster when no changes were done by the user', () => {
-        Cypress.env('AI_FORBIDDEN_CLUSTER_PATCH', true);
+        it('Should not update a cluster when no changes were done by the user', () => {
+            Cypress.env('AI_FORBIDDEN_CLUSTER_PATCH', true);
 
-        // TODO testing absolute hardcoded URL instead of the relative one
-        // commonActions.visitClusterDetailsPage();
-        cy.visit(`http://localhost:3000/clusters/${Cypress.env('clusterId')}`);
-
-        navbar.clickOnNavItem('Cluster details');
-        commonActions.clickNextButton();
-        commonActions.clickNextButton();
-        commonActions.getHeader('h2').should('contain', 'Host discovery');
-      });
+            navbar.clickOnNavItem('Cluster details');
+            commonActions.clickNextButton();
+            commonActions.clickNextButton();
+            commonActions.getHeader('h2').should('contain', 'Host discovery');
+        });
     });
 });
