@@ -6,10 +6,8 @@ const buildServerConfig = (env: Record<string, string>) => ({
   port: 3000,
   proxy: {
     '/api': {
-      target: 'http://localhost:3000',
-      // TODO not working, check why
-      // target: env.VITE_APP_API_URL,
-      changeOrigin: false,
+      target: env.VITE_APP_API_URL,
+      changeOrigin: true,
     }
   },
 });
