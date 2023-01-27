@@ -21,7 +21,24 @@ on:
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          cache: yarn
+          node-version: 16
+
+      - name: Remove existing env file
+        run: rm -f apps/assisted-ui/.env.development.local
+
+      - name: Create env file
+        run: echo "VITE_APP_API_URL=http://localhost:3000" >> apps/assisted-ui/.env.development.local
+
       - name: Build Assisted-UI for local server
         run: |
           yarn install --frozen-lockfile
@@ -35,9 +52,9 @@ jobs:
           browser: chrome
           config-file: cypress.json
           config: video=false
-          env: CYPRESS_API_BASE_URL=https://localhost:3000
+          env: CYPRESS_API_BASE_URL=http://localhost:3000
           start:
-            yarn preview:apps/assisted-ui
+            yarn --cwd=../../ preview:apps/assisted-ui
           spec: |
             ./src/integration/create-multinode/*.spec.ts
             ./src/integration/ui-behaviour/*.spec.ts
