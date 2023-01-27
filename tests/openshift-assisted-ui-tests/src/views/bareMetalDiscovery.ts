@@ -63,9 +63,9 @@ export const bareMetalDiscoveryPage = {
   },
   validateIsReadOnlyHostMenu: () => {
     cy.get(`[data-testid=host-row-0] > .pf-c-table__action`).scrollIntoView().click();
-    cy.get('[role="menuitem"][id^=button-view-host-events]').should('be.visible');
-    cy.get('[role="menuitem"][id^=button-edit-host]').should('not.exist');
-    cy.get('[role="menuitem"][id^=button-delete-host]').should('not.exist');
+    cy.get('li[role][id^=button-view-host-events]').should('be.visible');
+    cy.get('li[role][id^=button-edit-host]').should('not.exist');
+    cy.get('li[role][id^=button-delete-host]').should('not.exist');
   },
   massRenameHosts: (prefix) => {
     cy.get('.table-toolbar .pf-c-toolbar__item:first').click();
