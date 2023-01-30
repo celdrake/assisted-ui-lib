@@ -38,11 +38,13 @@ describe(`Assisted Installer SNO Cluster Installation`, () => {
       clusterDetailsPage.inputPullSecret();
 
       // Create the cluster and store its ID when moving to the next step
+      commonActions.waitForNext();
       commonActions.clickNextButton();
 
       cy.wait('@create-cluster');
       cy.wait('@create-infra-env');
       utils.setLastWizardSignal('CLUSTER_CREATED');
+      commonActions.waitForNext();
       commonActions.clickNextButton();
 
       commonActions.getHeader('h2').should('contain', 'Host discovery');

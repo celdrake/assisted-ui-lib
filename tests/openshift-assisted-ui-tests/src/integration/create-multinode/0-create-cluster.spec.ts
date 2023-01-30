@@ -27,6 +27,7 @@ describe(`Assisted Installer Multinode Cluster Installation`, () => {
       clusterDetailsPage.inputPullSecret();
 
       commonActions.getInfoAlert().should('not.exist');
+      commonActions.waitForNext();
       commonActions.clickNextButton();
 
       cy.wait('@create-cluster');
