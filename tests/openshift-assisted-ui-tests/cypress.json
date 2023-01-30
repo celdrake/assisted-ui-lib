@@ -27,7 +27,7 @@
     "REMOTE_SSH_ID_FILE": "",
     "REMOTE_USER": "",
     "REMOTE_HOST": "",
-    "PULL_SECRET": "fake-pull-secret",
+    "PULL_SECRET": "{\"auths\":{\"cloud.openshift.com\":{\"auth\":\"==\",\"email\":\"some-user@redhat.com\"},\"quay.io\":{\"auth\":\"==\",\"email\":\"some-user@redhat.com\"},\"registry.connect.redhat.com\":{\"auth\":\"\",\"email\":\"some-user@redhat.com\"},\"registry.redhat.io\":{\"auth\":\"\",\"email\":\"some-user@redhat.com\"}}}",
     "API_BASE_URL": "http://localhost:3000",
     "API_VERSION": "v2",
     "DEV_FLAG": true,
