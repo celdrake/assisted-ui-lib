@@ -56,6 +56,7 @@ jobs:
           start:
             yarn --cwd=../../ preview:apps/assisted-ui
           spec: |
-            ./src/integration/create-multinode/*.spec.ts
-            ./src/integration/create-sno/*.spec.ts
-            ./src/integration/read-only/*.spec.ts
+            ./src/integration/disk-encryption/*.spec.ts
+            ./src/integration/dualstack/*.spec.ts
+            ./src/integration/storage/*.spec.ts
+            ./src/integration/ui-behaviour/*.spec.ts
