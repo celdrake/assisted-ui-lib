@@ -4,6 +4,7 @@ VARIABLES
 Cypress.env('clusterNameFieldValidator', `[aria-label='Validation']`);
 Cypress.env('clusterNameFieldId', '#form-input-name-field');
 Cypress.env('openshiftVersionFieldId', '#form-input-openshiftVersion-field');
+Cypress.env('imageTypeFieldId', '#form-input-imageType-field');
 Cypress.env('pullSecretFieldId', '#form-input-pullSecret-field');
 Cypress.env('assistedInstallerSupportLevel', `[data-testid=assisted-installer-support-level]`);
 Cypress.env('snoSupportLevel', `[data-testid=SNO-support-level]`);

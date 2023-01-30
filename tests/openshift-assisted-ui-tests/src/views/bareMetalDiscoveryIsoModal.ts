@@ -83,8 +83,27 @@ export const bareMetalDiscoveryIsoModal = {
   getEditISO: () => {
     return cy.get('[data-testid="edit-iso-btn"]');
   },
-  getImageType: () => {
-    return cy.get('input[name="imageType"]');
+  getImageTypeField: () => {
+    return cy.get(Cypress.env('imageTypeFieldId'));
+  },
+  openOpenshiftVersionDropdown: () => {
+    bareMetalDiscoveryIsoModal.getImageTypeField().find('button.pf-c-dropdown__toggle').click();
+  },
+  getOpenshiftVersionDropdown: () => {
+    return bareMetalDiscoveryIsoModal.getImageTypeField().find('.pf-c-dropdown__menu');
+  },
+  getSelectedImageType: () => {
+    return bareMetalDiscoveryIsoModal.getImageTypeField().find('.pf-c-dropdown__toggle-text')
+  },
+  selectImageType: (typeLabel: string) => {
+    bareMetalDiscoveryIsoModal.openOpenshiftVersionDropdown();
+    bareMetalDiscoveryIsoModal.getOpenshiftVersionDropdown().within(() => {
+      cy.get('li').contains(typeLabel).click();
+    });
+    bareMetalDiscoveryIsoModal.getSelectedImageType().should(
+        'contain',
+        typeLabel,
+    );
   },
   getCancelGenerateDiscoveryIsoButton: () => {
     return cy.get('.pf-c-modal-box__footer > .pf-m-link');

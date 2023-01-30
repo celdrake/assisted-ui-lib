@@ -21,7 +21,7 @@ describe('Assisted Installer UI behaviour - infra env updates', () => {
     bareMetalDiscoveryPage.openAddHostsModal();
     bareMetalDiscoveryIsoModal.getGenerateDiscoveryIso().click();
     bareMetalDiscoveryIsoModal.getEditISO().click();
-    bareMetalDiscoveryIsoModal.getImageType().check('minimal-iso');
+    bareMetalDiscoveryIsoModal.selectImageType('Minimal image file');
     bareMetalDiscoveryIsoModal.getGenerateDiscoveryIso().click();
     cy.wait(['@update-infra-env', '@update-infra-env']).then((interceptions) => {
       // The infraEnv fixture has full-iso initially, so we change it to the minimal
