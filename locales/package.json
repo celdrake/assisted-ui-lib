@@ -1,0 +1,17 @@
+{
+  "exports": {
+    ".": "./index.js",
+    "./en": "./en/index.js",
+    "./ja": "./ja/index.js",
+    "./ko": "./ko/index.js",
+    "./zh": "./zh/index.js"
+  },
+  "license": "MIT",
+  "main": "index.js",
+  "name": "@openshift-assisted/locales",
+  "scripts": {
+    "clean": "echo \"skipping...\""
+  },
+  "type": "module",
+  "version": "1.0.0"
+}
