@@ -71,9 +71,10 @@ describe(`Assisted Installer Storage Step`, () => {
       ];
 
       hosts.forEach((host) => {
-        hostsTableSection.getHostDetails(host.hostId).click();
+        hostsTableSection.getHostDisksExpander(host.hostId).click();
         hostsTableSection.getHostDetailsTitle(host.hostId).should('have.text', '3 Disks');
         hostsTableSection.validateHostDisksDetails(host.disks);
+        hostsTableSection.getHostDisksExpander(host.hostId).click();
       });
     });
 
@@ -87,10 +88,11 @@ describe(`Assisted Installer Storage Step`, () => {
       ];
 
       hosts.forEach((host) => {
-        hostsTableSection.getHostDetails(host.hostId).click();
+        hostsTableSection.getHostDisksExpander(host.hostId).click();
         storagePage.validateSkipFormattingDisks(host.realHostId, 3);
         storagePage.validateSkipFormattingWarning();
         storagePage.validateSkipFormattingIcon(workerDisks[0].id);
+        hostsTableSection.getHostDisksExpander(host.hostId).click();
       });
     });
   });

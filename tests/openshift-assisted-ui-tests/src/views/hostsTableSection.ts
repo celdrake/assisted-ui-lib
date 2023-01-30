@@ -81,11 +81,13 @@ export const hostsTableSection = {
       cy.hostDetailSelector(i, 'Status', timeout).should('contain', status);
     }
   },
-  getHostDetails: (hostIndex: number) => {
+  getHostDisksExpander: (hostIndex: number) => {
     return cy.get(`#expandable-toggle${hostIndex * 2}`);
   },
   getHostDetailsTitle: (hostIndex: number) => {
-    return cy.get(`#expanded-content${hostIndex * 2 + 1} h3`);
+    return cy.get(`h3[data-testid="disks-section"]`).then((hostTables) => {
+        return hostTables[hostIndex];
+    });
   },
   validateHostDisksDetails: (disks) => {
     disks.forEach((disk) => {
